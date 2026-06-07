@@ -99,9 +99,54 @@ namespace TaskFlow_API.Controllers
         public IActionResult GetTaskByUser(Guid userId)
         {
             var tasksResponse = tasks.Where(t => t.AssignedToUserId == userId);
-            if (tasksResponse is null || tasksResponse.Count() == 0)
+            if (tasksResponse == null || tasksResponse.Count() == 0)
                 return NotFound($"No tasks found for user with ID {userId}.");
             return Ok(tasksResponse);
+        }
+
+        [HttpDelete("{id:guid}")]
+        [EndpointSummary("Deletes task by id")]
+        [EndpointDescription("Deletes a task.")]
+        public IActionResult DeleteTaskById(Guid id)
+        {
+            var task = tasks.FirstOrDefault(t => t.Id == id);
+
+            if (task != null)
+            {
+                tasks = tasks.Where(t => t.Id != id).ToList();
+                return Ok($"Deleted task with id {id}");
+            }
+            else
+                return NotFound($"No task found with id {id}");
+        }
+        [HttpPatch("{id:guid}")]
+        public IActionResult UpdateTaskById(Guid id, UpdateTaskRequest updateTaskRequest)
+        {
+            var task = tasks.FirstOrDefault(t => t.Id == id);
+            bool hasChanges = false;
+            if (task != null)
+            {
+                if(task.Name !=updateTaskRequest.Name)
+                {
+                    task.Name = updateTaskRequest.Name;
+                    hasChanges = true;
+                }
+                if(updateTaskRequest.Description != null && task.Description != updateTaskRequest.Description)
+                {
+                    task.Description = updateTaskRequest.Description;
+                    hasChanges = true;
+                }
+                if (updateTaskRequest.AssignedToUserId != null && updateTaskRequest.AssignedToUserId != task.AssignedToUserId)
+                {
+                    task.AssignedToUserId = updateTaskRequest.AssignedToUserId;
+                    hasChanges = true;
+                }
+                if (!hasChanges)
+                    return BadRequest($"No changes detected for task with id {id}");
+                return Ok($"Updated task with id {id}");
+            }
+            else
+                return NotFound($"No task found with id {id}");
         }
     }
 }
